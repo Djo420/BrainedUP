@@ -6,7 +6,7 @@
     "cycle": "Daily",
     "unit": "Hours",
     "completed": false,
-    "last_reset": "2025-07-01T16:51:42.931561+00:00",
+    "last_reset": "2025-07-02T17:47:09.262391+00:00",
     "priority": false
   },
   {
@@ -15,8 +15,8 @@
     "type": "Timer-based",
     "cycle": 1,
     "unit": "Days",
-    "completed": true,
-    "last_reset": "2025-07-02T10:10:36.454279+00:00",
+    "completed": false,
+    "last_reset": "2025-07-02T17:54:27.016127+00:00",
     "priority": true
   },
   {
@@ -66,7 +66,7 @@
     "cycle": "Daily",
     "unit": "Minutes",
     "completed": false,
-    "last_reset": "2025-07-01T16:20:43.746184+00:00",
+    "last_reset": "2025-07-02T17:47:07.747636+00:00",
     "priority": true
   },
   {
@@ -85,9 +85,9 @@
     "type": "Reset-based",
     "cycle": "Daily",
     "unit": null,
-    "completed": true,
-    "last_reset": "2025-07-02T10:10:37.094682+00:00",
-    "priority": true
+    "completed": false,
+    "last_reset": "2025-07-02T17:54:29.680942+00:00",
+    "priority": false
   },
   {
     "id": "d7f4318d-db3b-4b5a-9773-ca70873b499a",
@@ -95,9 +95,9 @@
     "type": "Reset-based",
     "cycle": "Daily",
     "unit": "Minutes",
-    "completed": true,
-    "last_reset": "2025-07-01T16:21:01.211123+00:00",
-    "priority": true
+    "completed": false,
+    "last_reset": "2025-07-02T17:54:29.414749+00:00",
+    "priority": false
   },
   {
     "id": "08565a45-24c7-46bf-8062-a7149f228512",
@@ -115,8 +115,8 @@
     "type": "Timer-based",
     "cycle": 14,
     "unit": "Days",
-    "completed": false,
-    "last_reset": "2025-07-02T10:10:43.025956+00:00",
+    "completed": true,
+    "last_reset": "2025-07-02T17:54:22.835386+00:00",
     "priority": false
   },
   {
