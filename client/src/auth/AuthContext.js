@@ -13,9 +13,11 @@ export function AuthProvider({ children }) {
       async error => {
         const originalRequest = error.config;
         if (error.response?.status === 401 && refreshToken) {
-          const { data } = await axios.post('http://127.0.0.1:5000/auth/refresh', null, {
-            headers: { Authorization: `Bearer ${refreshToken}` }
-          });
+          const { data } = await axios.post(
+            'http://127.0.0.1:5000/auth/refresh',
+            null,
+            { headers: { Authorization: `Bearer ${refreshToken}` } }
+          );
           setAccessToken(data.access_token);
           originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
           return axios(originalRequest);
@@ -27,13 +29,19 @@ export function AuthProvider({ children }) {
   }, [refreshToken]);
 
   const signup = async (email, password) => {
-    const { data } = await axios.post('http://127.0.0.1:5000/auth/signup', { email, password });
+    const { data } = await axios.post(
+      'http://127.0.0.1:5000/auth/signup',
+      { email, password }
+    );
     setAccessToken(data.access_token);
     setRefreshToken(data.refresh_token);
   };
 
   const login = async (email, password) => {
-    const { data } = await axios.post('http://127.0.0.1:5000/auth/login', { email, password });
+    const { data } = await axios.post(
+      'http://127.0.0.1:5000/auth/login',
+      { email, password }
+    );
     setAccessToken(data.access_token);
     setRefreshToken(data.refresh_token);
   };
@@ -43,7 +51,9 @@ export function AuthProvider({ children }) {
     setRefreshToken(null);
   };
 
-  axios.defaults.headers.common.Authorization = accessToken ? `Bearer ${accessToken}` : '';
+  axios.defaults.headers.common.Authorization = accessToken
+    ? `Bearer ${accessToken}`
+    : '';
 
   return (
     <AuthContext.Provider value={{ accessToken, refreshToken, signup, login, logout }}>
