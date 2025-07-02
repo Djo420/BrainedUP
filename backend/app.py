@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from tasks import load_tasks, save_tasks, add_task, update_task, delete_task
 from datetime import datetime, timedelta, timezone
+from backend.auth import auth_bp, jwt
 
 app = Flask(__name__)
 CORS(app)
