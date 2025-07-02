@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from tasks import load_tasks, save_tasks, add_task, update_task, delete_task
@@ -6,7 +10,16 @@ from models import db
 from auth import auth_bp, jwt
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+
+db.init_app(app)
+jwt.init_app(app)
 CORS(app)
+app.register_blueprint(auth_bp, url_prefix='/auth')
+
+with app.app_context():
+    db.create_all()
 
 def compute_next_reset(task):
     now  = datetime.now(timezone.utc)
