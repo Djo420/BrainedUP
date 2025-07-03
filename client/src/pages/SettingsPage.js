@@ -1,9 +1,11 @@
-import React from "react";
+import React from 'react';
+import ChangePassword from './ChangePassword';
 
 export default function SettingsPage() {
   return (
-    <div className="container mt-4">
-      <h2>Settings (coming soon)</h2>
+    <div>
+      <h2>Settings</h2>
+      <ChangePassword />
     </div>
   );
 }

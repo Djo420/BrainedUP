@@ -41,6 +41,29 @@ def refresh():
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token), 200
 
+@auth_bp.route("/password", methods=["PUT"])
+@jwt_required()
+def change_password():
+    """
+    Expects JSON: { "old_password": "...", "new_password": "..." }
+    """
+    data = request.get_json(force=True)
+    old = data.get("old_password")
+    new = data.get("new_password")
+
+    if not old or not new:
+        return jsonify({"msg": "Missing old or new password"}), 400
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user or not check_password_hash(user.password_hash, old):
+        return jsonify({"msg": "Old password incorrect"}), 401
+
+    user.password_hash = generate_password_hash(new)
+    db.session.commit()
+    return jsonify({"msg": "Password changed"}), 200
+
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required(refresh=True)
 def logout():
