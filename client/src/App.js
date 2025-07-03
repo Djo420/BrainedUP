@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
@@ -15,6 +15,9 @@ import SettingsPage from "./pages/SettingsPage";
 export default function App() {
   const { accessToken } = useContext(AuthContext);
   const [tasks, setTasks] = useState([]);
+
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!accessToken) return;
@@ -132,6 +135,17 @@ export default function App() {
               <NavLink className="nav-link" to="/settings">
                 Settings
               </NavLink>
+            </li>
+            <li className="nav-item">
+              <button
+                className="btn btn-outline-light"
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+              >
+                Logout
+              </button>
             </li>
           </ul>
         </div>
