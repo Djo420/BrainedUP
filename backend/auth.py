@@ -18,8 +18,8 @@ def signup():
     user = User(email=email, password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(access_token=access_token, refresh_token=refresh_token), 201
 
 @auth_bp.route("/login", methods=["POST"])
@@ -30,8 +30,8 @@ def login():
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password_hash, password or ""):
         return jsonify({"msg": "Bad credentials"}), 401
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 @auth_bp.route("/refresh", methods=["POST"])

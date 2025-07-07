@@ -26,7 +26,7 @@
     "cycle": 1,
     "unit": "Weeks",
     "completed": true,
-    "last_reset": "2025-07-02T10:10:36.721258+00:00",
+    "last_reset": "2025-07-07T11:54:52.014484+00:00",
     "priority": false
   },
   {
@@ -35,8 +35,8 @@
     "type": "Reset-based",
     "cycle": "Weekly",
     "unit": null,
-    "completed": true,
-    "last_reset": "2025-07-02T10:10:38.961337+00:00",
+    "completed": false,
+    "last_reset": "2025-07-07T11:54:44.215433+00:00",
     "priority": true
   },
   {
@@ -125,8 +125,8 @@
     "type": "Timer-based",
     "cycle": 2222,
     "unit": "Minutes",
-    "completed": true,
-    "last_reset": "2025-07-02T10:54:54.157319+00:00",
+    "completed": false,
+    "last_reset": "2025-07-07T11:54:44.215433+00:00",
     "priority": true
   }
 ]
