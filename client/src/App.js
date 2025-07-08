@@ -15,33 +15,36 @@ import CalendarPage from "./pages/CalendarPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
-  const { accessToken } = useContext(AuthContext);
+  const { accessToken, logout } = useContext(AuthContext);
   const [tasks, setTasks] = useState([]);
-
-  const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-  if (!accessToken) {
-    setTasks([]);
-    return;
-  }
-  fetch("/tasks", {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  })
-    .then(async res => {
-      if (!res.ok) return [];
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+    if (!accessToken) {
+      setTasks([]);
+      return;
+    }
+    fetch("http://127.0.0.1:5000/tasks", {
+      headers: { Authorization: `Bearer ${accessToken}` }
     })
-    .then(setTasks)
-    .catch(() => setTasks([]));
-}, [accessToken]);
-
+      .then(async res => {
+        if (res.status === 401) {
+          logout();
+          return [];
+        }
+        if (!res.ok) {
+          return [];
+        }
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      })
+      .then(setTasks)
+      .catch(() => setTasks([]));
+  }, [accessToken, logout]);
 
   const handleAdd = async data => {
     try {
-      const res = await fetch("/tasks", {
+      const res = await fetch("http://127.0.0.1:5000/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,7 +62,7 @@ export default function App() {
 
   const handleUpdate = async (id, data) => {
     try {
-      const res = await fetch(`/tasks/${id}`, {
+      const res = await fetch(`http://127.0.0.1:5000/tasks/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +80,7 @@ export default function App() {
 
   const handleDelete = async id => {
     try {
-      const res = await fetch(`/tasks/${id}`, {
+      const res = await fetch(`http://127.0.0.1:5000/tasks/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` }
       });
@@ -153,7 +156,7 @@ export default function App() {
                 className="btn btn-outline-light"
                 onClick={() => {
                   logout();
-                  navigate('/login');
+                  navigate("/login");
                 }}
               >
                 Logout
