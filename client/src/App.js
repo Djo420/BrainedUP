@@ -3,6 +3,8 @@ import { Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom"
 import { AuthContext } from "./auth/AuthContext";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
 import EventsPage from "./pages/EventsPage";
@@ -82,6 +84,8 @@ export default function App() {
     return (
       <Routes>
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

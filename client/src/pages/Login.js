@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,6 +48,9 @@ export default function Login() {
         <button type="submit" className="btn btn-primary w-100">
           Log In
         </button>
+        <div className="text-center mt-2">
+          <NavLink to="/forgot-password">Forgot password?</NavLink>
+        </div>
       </form>
     </div>
   );
