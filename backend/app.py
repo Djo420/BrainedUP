@@ -6,7 +6,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from tasks import load_tasks, save_tasks, add_task, update_task, delete_task
 from datetime import datetime, timedelta, timezone
-from models import db
+from models import db, Task
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth import auth_bp, jwt
 
 app = Flask(__name__)
@@ -65,41 +66,81 @@ def compute_next_reset(task):
     return None
 
 @app.route("/tasks", methods=["GET"])
+@jwt_required()
 def list_tasks():
-    tasks = load_tasks()
-    now = datetime.now(timezone.utc)
-    changed = False
-
-    for t in tasks:
-        if t.get("completed"):
-            nr = compute_next_reset(t)
-            if nr and now >= nr:
-                t["completed"] = False
-                t["last_reset"] = now.isoformat()
-                changed = True
-
-    if changed:
-        save_tasks(tasks)
-
-    return jsonify(tasks), 200
+    user_id = get_jwt_identity()
+    tasks = Task.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        "id": t.id,
+        "name": t.name,
+        "type": t.type,
+        "cycle": t.cycle,
+        "unit": t.unit,
+        "completed": t.completed,
+        "last_reset": t.last_reset.isoformat(),
+        "priority": t.priority
+    } for t in tasks]), 200
 
 @app.route("/tasks", methods=["POST"])
+@jwt_required()
 def create_task():
-    data = request.get_json()
-    task = add_task(data["name"], data["type"], data["cycle"], data.get("unit"))
-    return jsonify(task), 201
+    user_id = get_jwt_identity()
+    data = request.get_json(force=True)
+    t = Task(
+        user_id=user_id,
+        name=data["name"],
+        type=data["type"],
+        cycle=str(data["cycle"]),
+        unit=data.get("unit"),
+        completed=False
+    )
+    db.session.add(t)
+    db.session.commit()
+    return jsonify({
+        "id": t.id,
+        "name": t.name,
+        "type": t.type,
+        "cycle": t.cycle,
+        "unit": t.unit,
+        "completed": t.completed,
+        "last_reset": t.last_reset.isoformat(),
+        "priority": t.priority
+    }), 201
 
-@app.route("/tasks/<task_id>", methods=["PUT"])
-def modify_task(task_id):
-    data = request.get_json()
-    task = update_task(task_id, data)
-    if not task:
-        return jsonify({"error": "Not found"}), 404
-    return jsonify(task), 200
+@app.route("/tasks/<int:task_id>", methods=["PUT"])
+@jwt_required()
+def update_task(task_id):
+    user_id = get_jwt_identity()
+    t = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    if not t:
+        return jsonify({"msg": "Not found"}), 404
+    data = request.get_json(force=True)
+    for f in ("name", "type", "cycle", "unit", "completed", "priority"):
+        if f in data:
+            setattr(t, f, data[f])
+    if data.get("completed") or data.get("type") != t.type or data.get("cycle") != t.cycle:
+        t.last_reset = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify({
+        "id": t.id,
+        "name": t.name,
+        "type": t.type,
+        "cycle": t.cycle,
+        "unit": t.unit,
+        "completed": t.completed,
+        "last_reset": t.last_reset.isoformat(),
+        "priority": t.priority
+    }), 200
 
-@app.route("/tasks/<task_id>", methods=["DELETE"])
-def remove_task(task_id):
-    delete_task(task_id)
+@app.route("/tasks/<int:task_id>", methods=["DELETE"])
+@jwt_required()
+def delete_task(task_id):
+    user_id = get_jwt_identity()
+    t = Task.query.filter_by(id=task_id, user_id=user_id).first()
+    if not t:
+        return jsonify({"msg": "Not found"}), 404
+    db.session.delete(t)
+    db.session.commit()
     return "", 204
 
 if __name__ == "__main__":

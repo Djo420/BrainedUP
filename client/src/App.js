@@ -22,14 +22,22 @@ export default function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!accessToken) return;
-    fetch("/tasks", {
-      headers: { Authorization: `Bearer ${accessToken}` }
+  if (!accessToken) {
+    setTasks([]);
+    return;
+  }
+  fetch("/tasks", {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  })
+    .then(async res => {
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     })
-      .then(r => r.json())
-      .then(setTasks)
-      .catch(console.error);
-  }, [accessToken]);
+    .then(setTasks)
+    .catch(() => setTasks([]));
+}, [accessToken]);
+
 
   const handleAdd = async data => {
     try {
