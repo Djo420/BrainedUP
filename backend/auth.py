@@ -83,7 +83,7 @@ def request_reset():
             expires_delta=timedelta(minutes=15),
             additional_claims={"scope": "password_reset"}
         )
-        reset_url = f"{request.host_url.rstrip('/')}/reset-password?token={reset_token}"
+        reset_url = f"http://localhost:3000/reset-password?token={reset_token}"
         current_app.logger.info(f"Password reset link for {email}: {reset_url}")
     return jsonify({"msg": "If the email exists, a reset link has been sent."}), 200
 
