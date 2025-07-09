@@ -26,58 +26,73 @@ export default function TaskCard({ task, onToggle, onDelete, onEdit }) {
   }, [collapseThreshold]);
 
   useEffect(() => {
-  if (!task.completed) {
-    setTimeLeft("");
-    return;
-  }
-  let canceled = false;
-  function getNextReset() {
-    const now = Date.now();
-    const base = new Date(task.last_reset).getTime();
-    let nextMs = base;
-    if (task.type === "Timer-based") {
-      const unitMs = {
-        Minutes: 60000,
-        Hours:   3600000,
-        Days:    86400000,
-        Weeks:   7 * 86400000
-      }[task.unit] || 0;
-      nextMs = base + Number(task.cycle) * unitMs;
-    } else if (task.type === "Reset-based") {
-      if (task.cycle === "Daily") {
+    if (!task.completed) {
+      setTimeLeft("");
+      return;
+    }
+    let canceled = false;
+    const computeNext = () => {
+      const now = Date.now();
+      let nextMs;
+      if (task.type === "Timer-based") {
+        const base = new Date(task.last_reset).getTime();
+        const unitMs = {
+          Minutes: 60000,
+          Hours:   3600000,
+          Days:    86400000,
+          Weeks:   7 * 86400000
+        }[task.unit] || 0;
+        nextMs = base + unitMs * task.cycle;
+      } else if (task.cycle === "Daily") {
         const d = new Date();
         nextMs = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
-      } else if (task.cycle === "Weekly") {
-        const d = new Date();
-        nextMs = new Date(d.getFullYear(), d.getMonth(), d.getDate() + (7 - d.getDay())).getTime();
-      } else if (task.cycle === "Monthly") {
-        const d = new Date();
-        nextMs = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
-      } else if (task.cycle === "Yearly") {
-        const d = new Date();
-        nextMs = new Date(d.getFullYear() + 1, 0, 1).getTime();
+      } else {
+        const base = new Date(task.last_reset).getTime();
+        const dt = new Date(base);
+        if (task.cycle === "Weekly") {
+          dt.setDate(dt.getDate() + (7 - dt.getDay()));
+          dt.setHours(0,0,0,0);
+        } else if (task.cycle === "Monthly") {
+          dt.setMonth(dt.getMonth()+1);
+          dt.setDate(1);
+          dt.setHours(0,0,0,0);
+        } else if (task.cycle === "Yearly") {
+          dt.setFullYear(dt.getFullYear()+1);
+          dt.setMonth(0);
+          dt.setDate(1);
+          dt.setHours(0,0,0,0);
+        }
+        nextMs = dt.getTime();
       }
-    }
-    return nextMs - now;
-  }
-
-  function update() {
-    const diff = getNextReset();
-    if (diff <= 0) {
+      const diff = nextMs - now;
+      if (diff <= 0) {
+        if (!canceled) onToggle(task.id, { completed: false });
+        return [diff, ""];
+      }
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      return [diff, `${d>0?d+"d ": ""}${h>0?h+"h ": ""}${m}m ${s}s`];
+    };
+    const [initialDiff, initialLabel] = computeNext();
+    if (initialDiff <= 0) {
       onToggle(task.id, { completed: false });
       return;
     }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    setTimeLeft(`${d > 0 ? d + "d " : ""}${h > 0 ? h + "h " : ""}${m}m ${s}s`);
-  }
-
-  update();
-  const iv = setInterval(update, 1000);
-  return () => clearInterval(iv);
-}, [task, onToggle]);
+    setTimeLeft(initialLabel);
+    const iv = setInterval(() => {
+      const [diff2,label2] = computeNext();
+      if (diff2 <= 0 && !canceled) {
+        canceled = true;
+        clearInterval(iv);
+        onToggle(task.id, { completed: false });
+      } else {
+        setTimeLeft(label2);
+      }
+    }, 1000);
+    return () => { canceled = true; clearInterval(iv); };
+  }, [task, onToggle]);
 
   const handleComplete = () => {
     if (!task.completed) {
@@ -126,7 +141,7 @@ export default function TaskCard({ task, onToggle, onDelete, onEdit }) {
     display:    "flex",
     alignItems: "center",
     gap:        "0.5rem",
-    width:      isStack?"auto":`${timerColW}px`,
+    width:      isStack ? "auto" : `${timerColW}px`,
     overflow:   "hidden",
     whiteSpace: "nowrap"
   };
@@ -143,7 +158,7 @@ export default function TaskCard({ task, onToggle, onDelete, onEdit }) {
   const actionsStyle = {
     display:        "flex",
     gap:            "0.5rem",
-    width:          isStack?"auto":`${actionsColW}px`,
+    width:          isStack ? "auto" : `${actionsColW}px`,
     justifyContent: isStack?"center":"flex-end"
   };
 
