@@ -4,45 +4,17 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from models import db, Task
-from auth import auth_bp, jwt
+from auth import auth_bp
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///your.db')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key')
 db.init_app(app)
-jwt.init_app(app)
+jwt = JWTManager(app)
 CORS(app)
 app.register_blueprint(auth_bp, url_prefix='/auth')
-
-with app.app_context():
-    db.create_all()
-
-def compute_next_reset(task):
-    now = datetime.now(timezone.utc)
-    last = task.last_reset
-    if task.type == "Timer-based":
-        if task.unit == "Minutes":
-            return last + timedelta(minutes=int(task.cycle))
-        if task.unit == "Hours":
-            return last + timedelta(hours=int(task.cycle))
-        if task.unit == "Days":
-            return last + timedelta(days=int(task.cycle))
-        if task.unit == "Weeks":
-            return last + timedelta(weeks=int(task.cycle))
-    else:
-        if task.cycle == "Daily":
-            return now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
-        if task.cycle == "Weekly":
-            return last + timedelta(days=(7 - last.weekday()))
-        if task.cycle == "Monthly":
-            year = last.year + (last.month // 12)
-            month = (last.month % 12) + 1
-            return last.replace(year=year, month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
-        if task.cycle == "Yearly":
-            return last.replace(year=last.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-    return None
 
 @app.route("/tasks", methods=["GET"])
 @jwt_required()
@@ -102,11 +74,11 @@ def update_task(task_id):
     for f in ("name", "type", "cycle", "unit", "completed", "priority"):
         if f in data:
             setattr(t, f, data[f])
-    if ("last_reset" not in data and (
-        data.get("completed") or
-        data.get("type") != t.type or
-        data.get("cycle") != t.cycle
-    )):
+    if "last_reset" not in data and (
+        data.get("completed")
+        or data.get("type") != t.type
+        or data.get("cycle") != t.cycle
+    ):
         t.last_reset = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify({
@@ -132,4 +104,4 @@ def delete_task(task_id):
     return "", 204
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)

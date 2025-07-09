@@ -26,67 +26,67 @@ export default function TaskCard({ task, onToggle, onDelete, onEdit }) {
   }, [collapseThreshold]);
 
   useEffect(() => {
-  if (!task.completed) {
-    setTimeLeft("");
-    return;
-  }
-  let canceled = false;
-  let skipReset = true;
-  const computeNext = () => {
-    const now = Date.now();
-    let nextMs = new Date(task.last_reset).getTime();
-    if (task.type === "Timer-based") {
-      if (task.unit === "Minutes") nextMs += task.cycle * 60000;
-      if (task.unit === "Hours")   nextMs += task.cycle * 3600000;
-      if (task.unit === "Days")    nextMs += task.cycle * 86400000;
-      if (task.unit === "Weeks")   nextMs += task.cycle * 604800000;
-    } else {
-      const dt = new Date(task.last_reset);
-      if (task.cycle === "Daily") {
-        dt.setHours(0,0,0,0);
-        dt.setDate(dt.getDate() + 1);
-      }
-      if (task.cycle === "Weekly") {
-        dt.setHours(0,0,0,0);
-        dt.setDate(dt.getDate() + (7 - dt.getDay()));
-      }
-      if (task.cycle === "Monthly") {
-        dt.setHours(0,0,0,0);
-        dt.setMonth(dt.getMonth() + 1);
-        dt.setDate(1);
-      }
-      if (task.cycle === "Yearly") {
-        dt.setHours(0,0,0,0);
-        dt.setFullYear(dt.getFullYear() + 1);
-        dt.setMonth(0);
-        dt.setDate(1);
-      }
-      nextMs = dt.getTime();
-    }
-    const diff = nextMs - now;
-    if (diff <= 0) {
-      if (skipReset) {
-        skipReset = false;
-      } else {
-        onToggle(task.id, { completed: false });
-      }
+    if (!task.completed) {
       setTimeLeft("");
       return;
     }
-    skipReset = false;
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    setTimeLeft(`${d > 0 ? d + "d " : ""}${h > 0 ? h + "h " : ""}${m}m ${s}s`);
-  };
-  computeNext();
-  const iv = setInterval(computeNext, 1000);
-  return () => {
-    canceled = true;
-    clearInterval(iv);
-  };
-}, [task, onToggle]);
+    let canceled = false;
+    let skipReset = true;
+    const computeNext = () => {
+      const now = Date.now();
+      let nextMs = new Date(task.last_reset).getTime();
+      if (task.type === "Timer-based") {
+        if (task.unit === "Minutes") nextMs += task.cycle * 60000;
+        if (task.unit === "Hours")   nextMs += task.cycle * 3600000;
+        if (task.unit === "Days")    nextMs += task.cycle * 86400000;
+        if (task.unit === "Weeks")   nextMs += task.cycle * 604800000;
+      } else {
+        const dt = new Date(task.last_reset);
+        if (task.cycle === "Daily") {
+          dt.setHours(0,0,0,0);
+          dt.setDate(dt.getDate() + 1);
+        }
+        if (task.cycle === "Weekly") {
+          dt.setHours(0,0,0,0);
+          dt.setDate(dt.getDate() + (7 - dt.getDay()));
+        }
+        if (task.cycle === "Monthly") {
+          dt.setHours(0,0,0,0);
+          dt.setMonth(dt.getMonth() + 1);
+          dt.setDate(1);
+        }
+        if (task.cycle === "Yearly") {
+          dt.setHours(0,0,0,0);
+          dt.setFullYear(dt.getFullYear() + 1);
+          dt.setMonth(0);
+          dt.setDate(1);
+        }
+        nextMs = dt.getTime();
+      }
+      const diff = nextMs - now;
+      if (diff <= 0) {
+        if (skipReset) {
+          skipReset = false;
+        } else {
+          onToggle(task.id, { completed: false });
+        }
+        setTimeLeft("");
+        return;
+      }
+      skipReset = false;
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${d > 0 ? d + "d " : ""}${h > 0 ? h + "h " : ""}${m}m ${s}s`);
+    };
+    computeNext();
+    const iv = setInterval(computeNext, 1000);
+    return () => {
+      canceled = true;
+      clearInterval(iv);
+    };
+  }, [task, onToggle]);
 
   const handleComplete = () => {
     if (!task.completed) {
