@@ -1,19 +1,16 @@
 from dotenv import load_dotenv
 load_dotenv()
-
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from tasks import load_tasks, save_tasks, add_task, update_task, delete_task
 from datetime import datetime, timedelta, timezone
-from models import db, Task
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from models import db, Task
 from auth import auth_bp, jwt
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
-
 db.init_app(app)
 jwt.init_app(app)
 CORS(app)
@@ -23,46 +20,28 @@ with app.app_context():
     db.create_all()
 
 def compute_next_reset(task):
-    now  = datetime.now(timezone.utc)
-    last = datetime.fromisoformat(task["last_reset"])
-    if last.tzinfo is None:
-        last = last.replace(tzinfo=timezone.utc)
-
-    if task["type"] == "Timer-based":
-        unit = task.get("unit")
-        if unit == "Minutes":
-            return last + timedelta(minutes=task["cycle"])
-        if unit == "Hours":
-            return last + timedelta(hours=task["cycle"])
-        if unit == "Days":
-            return last + timedelta(days=task["cycle"])
-        if unit == "Weeks":
-            return last + timedelta(weeks=task["cycle"])
-        return last
-
-    if task["cycle"] == "Daily":
-        base = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        return base + timedelta(days=1)
-
-    if task["cycle"] == "Weekly":
-        return last + timedelta(days=(7 - last.weekday()))
-
-    if task["cycle"] == "Monthly":
-        year, month = last.year + (last.month // 12), (last.month % 12) + 1
-        return last.replace(
-            year=year,
-            month=month,
-            day=1,
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
-    if task["cycle"] == "Yearly":
-        return last.replace(
-            year=last.year + 1,
-            month=1, day=1,
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
+    now = datetime.now(timezone.utc)
+    last = task.last_reset
+    if task.type == "Timer-based":
+        if task.unit == "Minutes":
+            return last + timedelta(minutes=int(task.cycle))
+        if task.unit == "Hours":
+            return last + timedelta(hours=int(task.cycle))
+        if task.unit == "Days":
+            return last + timedelta(days=int(task.cycle))
+        if task.unit == "Weeks":
+            return last + timedelta(weeks=int(task.cycle))
+    else:
+        if task.cycle == "Daily":
+            return now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        if task.cycle == "Weekly":
+            return last + timedelta(days=(7 - last.weekday()))
+        if task.cycle == "Monthly":
+            year = last.year + (last.month // 12)
+            month = (last.month % 12) + 1
+            return last.replace(year=year, month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        if task.cycle == "Yearly":
+            return last.replace(year=last.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     return None
 
 @app.route("/tasks", methods=["GET"])
@@ -115,10 +94,19 @@ def update_task(task_id):
     if not t:
         return jsonify({"msg": "Not found"}), 404
     data = request.get_json(force=True)
+    if "last_reset" in data:
+        try:
+            t.last_reset = datetime.fromisoformat(data["last_reset"])
+        except Exception:
+            pass
     for f in ("name", "type", "cycle", "unit", "completed", "priority"):
         if f in data:
             setattr(t, f, data[f])
-    if data.get("completed") or data.get("type") != t.type or data.get("cycle") != t.cycle:
+    if ("last_reset" not in data and (
+        data.get("completed") or
+        data.get("type") != t.type or
+        data.get("cycle") != t.cycle
+    )):
         t.last_reset = datetime.now(timezone.utc)
     db.session.commit()
     return jsonify({

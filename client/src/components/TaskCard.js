@@ -26,73 +26,67 @@ export default function TaskCard({ task, onToggle, onDelete, onEdit }) {
   }, [collapseThreshold]);
 
   useEffect(() => {
-    if (!task.completed) {
+  if (!task.completed) {
+    setTimeLeft("");
+    return;
+  }
+  let canceled = false;
+  let skipReset = true;
+  const computeNext = () => {
+    const now = Date.now();
+    let nextMs = new Date(task.last_reset).getTime();
+    if (task.type === "Timer-based") {
+      if (task.unit === "Minutes") nextMs += task.cycle * 60000;
+      if (task.unit === "Hours")   nextMs += task.cycle * 3600000;
+      if (task.unit === "Days")    nextMs += task.cycle * 86400000;
+      if (task.unit === "Weeks")   nextMs += task.cycle * 604800000;
+    } else {
+      const dt = new Date(task.last_reset);
+      if (task.cycle === "Daily") {
+        dt.setHours(0,0,0,0);
+        dt.setDate(dt.getDate() + 1);
+      }
+      if (task.cycle === "Weekly") {
+        dt.setHours(0,0,0,0);
+        dt.setDate(dt.getDate() + (7 - dt.getDay()));
+      }
+      if (task.cycle === "Monthly") {
+        dt.setHours(0,0,0,0);
+        dt.setMonth(dt.getMonth() + 1);
+        dt.setDate(1);
+      }
+      if (task.cycle === "Yearly") {
+        dt.setHours(0,0,0,0);
+        dt.setFullYear(dt.getFullYear() + 1);
+        dt.setMonth(0);
+        dt.setDate(1);
+      }
+      nextMs = dt.getTime();
+    }
+    const diff = nextMs - now;
+    if (diff <= 0) {
+      if (skipReset) {
+        skipReset = false;
+      } else {
+        onToggle(task.id, { completed: false });
+      }
       setTimeLeft("");
       return;
     }
-    let canceled = false;
-    const computeNext = () => {
-      const now = Date.now();
-      let nextMs;
-      if (task.type === "Timer-based") {
-        const base = new Date(task.last_reset).getTime();
-        const unitMs = {
-          Minutes: 60000,
-          Hours:   3600000,
-          Days:    86400000,
-          Weeks:   7 * 86400000
-        }[task.unit] || 0;
-        nextMs = base + unitMs * task.cycle;
-      } else if (task.cycle === "Daily") {
-        const d = new Date();
-        nextMs = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
-      } else {
-        const base = new Date(task.last_reset).getTime();
-        const dt = new Date(base);
-        if (task.cycle === "Weekly") {
-          dt.setDate(dt.getDate() + (7 - dt.getDay()));
-          dt.setHours(0,0,0,0);
-        } else if (task.cycle === "Monthly") {
-          dt.setMonth(dt.getMonth()+1);
-          dt.setDate(1);
-          dt.setHours(0,0,0,0);
-        } else if (task.cycle === "Yearly") {
-          dt.setFullYear(dt.getFullYear()+1);
-          dt.setMonth(0);
-          dt.setDate(1);
-          dt.setHours(0,0,0,0);
-        }
-        nextMs = dt.getTime();
-      }
-      const diff = nextMs - now;
-      if (diff <= 0) {
-        if (!canceled) onToggle(task.id, { completed: false });
-        return [diff, ""];
-      }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      return [diff, `${d>0?d+"d ": ""}${h>0?h+"h ": ""}${m}m ${s}s`];
-    };
-    const [initialDiff, initialLabel] = computeNext();
-    if (initialDiff <= 0) {
-      onToggle(task.id, { completed: false });
-      return;
-    }
-    setTimeLeft(initialLabel);
-    const iv = setInterval(() => {
-      const [diff2,label2] = computeNext();
-      if (diff2 <= 0 && !canceled) {
-        canceled = true;
-        clearInterval(iv);
-        onToggle(task.id, { completed: false });
-      } else {
-        setTimeLeft(label2);
-      }
-    }, 1000);
-    return () => { canceled = true; clearInterval(iv); };
-  }, [task, onToggle]);
+    skipReset = false;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    setTimeLeft(`${d > 0 ? d + "d " : ""}${h > 0 ? h + "h " : ""}${m}m ${s}s`);
+  };
+  computeNext();
+  const iv = setInterval(computeNext, 1000);
+  return () => {
+    canceled = true;
+    clearInterval(iv);
+  };
+}, [task, onToggle]);
 
   const handleComplete = () => {
     if (!task.completed) {
